@@ -1,37 +1,45 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Context } from "../main";
+import { Context } from "../context/AuthContext.js";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { localizeApiMessage } from "../utils/localizeApiMessage.js";
 
 const Login = () => {
-  const {  setIsAuthenticated, setUser } =
-    useContext(Context);
-  const navigateTo = useNavigate();
+  const { setIsAuthenticated, setUser } = useContext(Context);
+  const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit } = useForm();
   const handleLogin = async (data) => {
-    await axios
-      .post("http://localhost:4000/api/v1/user/login", data, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const response = await axios.post(
+        "http://localhost:4000/api/v1/user/login",
+        data,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      })
-      .then((res) => {
-        toast.success(res.data.message);
-        setIsAuthenticated(true);
-        setUser(res.data.user);
-        navigateTo("/");
-      })
-      .catch((error) => {
-        toast.error(error.response.data.message);
-      });
+      );
+      toast.success(
+        localizeApiMessage(response.data.message, t, t("api.loggedIn")),
+      );
+      setIsAuthenticated(true);
+      setUser(response.data.user);
+      navigate("/");
+    } catch (error) {
+      toast.error(
+        localizeApiMessage(
+          error.response?.data?.message,
+          t,
+          t("api.invalidCredentials"),
+        ),
+      );
+    }
   };
 
   return (
@@ -40,23 +48,31 @@ const Login = () => {
         className="auth-form"
         onSubmit={handleSubmit((data) => handleLogin(data))}
       >
-        <h2>Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          required
-          {...register("email")}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          {...register("password")}
-        />
+        <h2>{t("common.login")}</h2>
+        <label className="auth-field" htmlFor="login-email">
+          <span>{t("auth.email")}</span>
+          <input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            required
+            {...register("email")}
+          />
+        </label>
+        <label className="auth-field" htmlFor="login-password">
+          <span>{t("auth.password")}</span>
+          <input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            required
+            {...register("password")}
+          />
+        </label>
         <p className="forgot-password">
-          <Link to={"/forgot/password"}>forgot Password?</Link>
+          <Link to={"/forgot/password"}>{t("auth.forgotPassword")}</Link>
         </p>
-        <button type="submit">Login</button>
+        <button type="submit">{t("common.login")}</button>
       </form>
     </>
   );

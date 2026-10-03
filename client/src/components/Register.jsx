@@ -1,30 +1,44 @@
- 
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import { localizeApiMessage } from "../utils/localizeApiMessage.js";
+import i18n from "../i18n.js";
 
-const Register = () => { 
-  const NavigateTo = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+const Register = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { register, handleSubmit } = useForm();
 
   const handleRegister = async (data) => {
-    data.phone = `+91${data.phone}`;
     await axios
-      .post("http://localhost:4000/api/v1/user/register", data, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-      })
+      .post(
+        "http://localhost:4000/api/v1/user/register",
+        { ...data, language: i18n.resolvedLanguage },
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        },
+      )
       .then((res) => {
-        toast.success(res.data.message);
-        NavigateTo(`/otp-verification/${data.phone}/${data.email}`);
+        toast.success(
+          localizeApiMessage(
+            res.data.message,
+            t,
+            t("api.verificationSendFailed"),
+          ),
+        );
+        navigate(`/otp-verification/${encodeURIComponent(data.email)}`);
       })
       .catch((error) => {
-        toast.error(error?.response?.data?.message || "Registration failed");
+        toast.error(
+          localizeApiMessage(
+            error?.response?.data?.message,
+            t,
+            t("api.allFieldsRequired"),
+          ),
+        );
       });
   };
 
@@ -37,60 +51,39 @@ const Register = () => {
             handleRegister(data);
           })}
         >
-          <h2>Register</h2>
-          <input
-            type="text"
-            placeholder="Name"
-            required
-            {...register("name")}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            {...register("email")}
-          />
-          <div>
-            <span>+91</span>
+          <h2>{t("auth.registerHeading")}</h2>
+          <label className="auth-field" htmlFor="register-name">
+            <span>{t("auth.fullName")}</span>
             <input
-              type="number"
-              placeholder="Phone"
+              id="register-name"
+              type="text"
+              autoComplete="name"
               required
-              {...register("phone")}
+              {...register("name")}
             />
-          </div>
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            {...register("password")}
-          />
-          <div className="verification-method">
-            <p>Select verification method</p>
-            <div className="wrapper">
-              <label>
-                <input
-                  type="radio"
-                  name="verificationMethod"
-                  value={"email"}
-                  {...register("verificationMethod")}
-                  required
-                />
-                email 
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="verificationMethod"
-                  value={"phone"}
-                  {...register("verificationMethod")}
-                  required
-                />
-                Phone
-              </label>
-            </div>
-          </div>
-          <button type="submit">Register</button>
+          </label>
+          <label className="auth-field" htmlFor="register-email">
+            <span>{t("auth.email")}</span>
+            <input
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              required
+              {...register("email")}
+            />
+          </label>
+          <label className="auth-field" htmlFor="register-password">
+            <span>{t("auth.password")}</span>
+            <input
+              id="register-password"
+              type="password"
+              autoComplete="new-password"
+              required
+              {...register("password")}
+            />
+          </label>
+          <p className="verification-note">{t("auth.verificationNote")}</p>
+          <button type="submit">{t("common.register")}</button>
         </form>
       </div>
     </>

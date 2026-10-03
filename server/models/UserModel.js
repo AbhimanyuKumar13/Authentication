@@ -3,33 +3,30 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  password: {
-    type: String,
-    minLength: [8, "Password must contain atleast 8 characters"],
-    maxLength: [32, `Password can't contain more than 32 characters`],
-    select: false,
+const userSchema = new mongoose.Schema(
+  {
+    name: String,
+    email: { type: String, lowercase: true, trim: true },
+    password: {
+      type: String,
+      minLength: [8, "Password must contain atleast 8 characters"],
+      maxLength: [32, `Password can't contain more than 32 characters`],
+      select: false,
+    },
+    accountVerified: { type: Boolean, default: false },
+    verificationCode: Number,
+    verificationCodeExpire: Date,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
-  phone: String,
-  accountVerified: { type: Boolean, default: false },
-  VerificationCode: Number,
-  VerificationCodeExpire: Date,
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  createAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { timestamps: true },
+);
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) {
-    next();
+    return;
   }
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
@@ -37,16 +34,9 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 };
 
 userSchema.methods.generateVerificationCode = function () {
-  function generateRandomDigitNumber() {
-    const firstDigit = Math.floor(Math.random() * 9) + 1;
-    const remaningDigits = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, 0);
-    return parseInt(firstDigit + remaningDigits);
-  }
-  const verificationCode = generateRandomDigitNumber();
-  this.VerificationCode = verificationCode;
-  this.VerificationCodeExpire = Date.now() + 10 * 60 * 1000;
+  const verificationCode = crypto.randomInt(10000, 100000);
+  this.verificationCode = verificationCode;
+  this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
 
   return verificationCode;
 };
@@ -65,7 +55,6 @@ userSchema.methods.generateResetPasswordToken = function () {
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
   return resetToken;
-
 };
 
 export const User = mongoose.model("User", userSchema);

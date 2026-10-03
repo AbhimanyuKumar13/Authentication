@@ -1,13 +1,19 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import "../styles/Auth.css";
 import { Navigate } from "react-router-dom";
-import { Context } from "../main";
-import Login from '../components/Login'
-import Register from '../components/Register'
+import { Context } from "../context/AuthContext.js";
+import Login from "../components/Login";
+import Register from "../components/Register";
+import AuthBrand from "../components/AuthBrand";
+import { useTranslation } from "react-i18next";
 
 const Auth = () => {
   const { isAuthenticated } = useContext(Context);
-  const [isLogin, setIsLogin] = useState(true);
+  const { t } = useTranslation();
+  const [isLogin, setIsLogin] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("mode") !== "register",
+  );
   if (isAuthenticated) {
     return <Navigate to={"/"} />;
   }
@@ -15,21 +21,22 @@ const Auth = () => {
     <>
       <div className="auth-page">
         <div className="auth-container">
+          <AuthBrand />
           <div className="auth-toggle">
             <button
               className={`toggle-btn ${isLogin ? "active" : ""}`}
               onClick={() => setIsLogin(true)}
             >
-              Login
+              {t("common.login")}
             </button>
             <button
               className={`toggle-btn ${!isLogin ? "active" : ""}`}
               onClick={() => setIsLogin(false)}
             >
-              Register
+              {t("common.register")}
             </button>
           </div>
-          {isLogin ? <Login/> : <Register/>}
+          {isLogin ? <Login /> : <Register />}
         </div>
       </div>
     </>
