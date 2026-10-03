@@ -1,78 +1,53 @@
-import { useState } from "react";
-import "../styles/Auth.css";
+import React, { useContext, useState } from "react";
+import "../styles/ForgotPassword.css";
+import { Context } from "../main";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Link } from "react-router-dom";
-import AuthBrand from "../components/AuthBrand";
-import { useTranslation } from "react-i18next";
-import { localizeApiMessage } from "../utils/localizeApiMessage.js";
-import i18n from "../i18n.js";
 
-const ForgotPassword = () => {
-  const { t } = useTranslation();
+const ForgotPassword = () => { 
   const [email, setEmail] = useState("");
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     await axios
       .post(
         "http://localhost:4000/api/v1/user/password/forgot",
-        { email, language: i18n.resolvedLanguage },
+        { email },
         {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
           },
-        },
+        }
       )
       .then((res) => {
-        toast.success(
-          localizeApiMessage(
-            res.data.message,
-            t,
-            t("api.emailSent", { email }),
-          ),
-        );
+        toast.success(res.data.message);
       })
       .catch((error) => {
-        toast.error(
-          localizeApiMessage(
-            error.response?.data?.message,
-            t,
-            t("api.resetEmailFailed"),
-          ),
-        );
+        toast.error(error.response.data.message);
       });
   };
   return (
     <>
       <div className="forgot-password-page">
         <div className="forgot-password-container">
-          <AuthBrand />
-          <h2>{t("auth.forgotHeading")}</h2>
-          <p>{t("auth.forgotDescription")}</p>
+          <h2>Forgot Password</h2>
+          <p>Enter your email address to receive a password reset token.</p>
           <form
             onSubmit={handleForgotPassword}
             className="forgot-password-form"
           >
-            <label className="auth-field" htmlFor="forgot-email">
-              <span>{t("auth.email")}</span>
-              <input
-                id="forgot-email"
-                type="email"
-                value={email}
-                autoComplete="email"
-                onChange={(e) => setEmail(e.target.value)}
-                className="forgot-input"
-                required
-              />
-            </label>
+            <input
+              type="email"
+              value={email}
+              placeholder="Enter your Email"
+              onChange={(e) => setEmail(e.target.value)}
+              className="forgot-input"
+              required
+            />
             <button className="forgot-btn" type="submit">
-              {t("auth.sendResetLink")}
+              Send Reset Link
             </button>
           </form>
-          <Link className="auth-return-link" to="/auth?mode=login">
-            {t("common.backToLogin")}
-          </Link>
         </div>
       </div>
     </>

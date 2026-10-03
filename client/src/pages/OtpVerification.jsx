@@ -1,17 +1,13 @@
-import { useContext, useState } from "react";
-import "../styles/Auth.css";
+import React, { useContext, useState } from "react";
+import "../styles/OtpVerification.css";
 import axios from "axios";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Context } from "../context/AuthContext.js";
-import AuthBrand from "../components/AuthBrand";
-import { useTranslation } from "react-i18next";
-import { localizeApiMessage } from "../utils/localizeApiMessage.js";
+import { Context } from "../main";
 
 const OtpVerification = () => {
   const { isAuthenticated, setIsAuthenticated, setUser } = useContext(Context);
-  const { email } = useParams();
-  const { t } = useTranslation();
+  const { email, phone } = useParams();
   const [otp, setOtp] = useState(["", "", "", "", ""]);
 
   const handleChange = (value, index) => {
@@ -33,7 +29,8 @@ const OtpVerification = () => {
     const data = {
       email,
       otp: enteredOtp,
-    };
+      phone,
+    }; 
     await axios
       .post("http://localhost:4000/api/v1/user/otp-verification", data, {
         withCredentials: true,
@@ -42,20 +39,12 @@ const OtpVerification = () => {
         },
       })
       .then((res) => {
-        toast.success(
-          localizeApiMessage(res.data.message, t, t("api.accountVerified")),
-        );
+        toast.success(res.data.message);
         setIsAuthenticated(true);
         setUser(res.data.user);
       })
       .catch((error) => {
-        toast.error(
-          localizeApiMessage(
-            error?.response?.data?.message,
-            t,
-            t("api.invalidOtp"),
-          ),
-        );
+        toast.error(error?.response?.data?.message);
         setIsAuthenticated(false);
         setUser(null);
       });
@@ -72,31 +61,18 @@ const OtpVerification = () => {
     <>
       <div className="otp-verification-page">
         <div className="otp-container">
-          <AuthBrand />
-          <h2>{t("auth.otpHeading")}</h2>
-          <p>{t("auth.otpDescription")}</p>
+          <h2>OTP Verification</h2>
+          <p>Enter the 5-Digit OTP sent to your Email or Phone.</p>
           <form onSubmit={handleOtpVerification} className="otp-form">
-            <span id="otp-code-label" className="auth-field-label">
-              {t("auth.verificationCode")}
-            </span>
-            <div
-              className="otp-input-container"
-              role="group"
-              aria-labelledby="otp-code-label"
-            >
+            <div className="otp-input-container">
               {otp.map((digit, index) => {
                 return (
                   <input
                     id={`otp-input-${index}`}
                     type="text"
-                    inputMode="numeric"
-                    autoComplete={index === 0 ? "one-time-code" : "off"}
                     maxLength={1}
                     key={index}
                     value={digit}
-                    aria-label={t("auth.verificationDigit", {
-                      current: index + 1,
-                    })}
                     onChange={(e) => {
                       handleChange(e.target.value, index);
                     }}
@@ -108,17 +84,10 @@ const OtpVerification = () => {
                 );
               })}
             </div>
-            <button
-              type="submit"
-              className="verify-button"
-              disabled={otp.some((digit) => !digit)}
-            >
-              {t("auth.verifyCode")}
+            <button type="submit" className="verify-button">
+              Verify OTP
             </button>
           </form>
-          <Link className="auth-return-link" to="/auth?mode=register">
-            {t("auth.backToRegistration")}
-          </Link>
         </div>
       </div>
     </>
